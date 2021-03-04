@@ -23,7 +23,9 @@ class QuarkusSimulation extends Base {
 
   setUp(
     scn
-      .inject { steadyLoad() }
+      .inject {
+        getLoad()
+      }
       .protocols(httpProtocol)
   )
 

@@ -26,7 +26,7 @@ class MicronautSimulation extends Base {
   setUp(
       scn
       .inject(
-        steadyLoad()
+        getLoad()
       )
       .protocols(httpProtocol)
   )
