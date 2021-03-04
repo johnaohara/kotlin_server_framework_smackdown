@@ -1,6 +1,5 @@
 package bars
 
-import io.smallrye.mutiny.Multi
 import kotlinx.html.dom.serialize
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
@@ -21,11 +20,11 @@ class WebApp(val pgPool: PgPool) {
     @GET
     @Path("/bars")
     @Produces(MediaType.APPLICATION_JSON)
-    // todo: Uni<List<Bar>> ?
-    fun getBars(): Multi<Bar> {
+    fun getBars(): Uni<List<Bar>> {
         return pgPool.query("SELECT * FROM bar").execute()
-            .onItem().transformToMulti(Multi.createFrom()::iterable)
-            .onItem().transform { Bar(it.getString("name")) }
+            .onItem().transform {
+                it.map { row -> Bar(row.getString("name")) }
+            }
     }
 
     @POST
