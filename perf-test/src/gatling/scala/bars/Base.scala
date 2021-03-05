@@ -14,30 +14,31 @@ import scala.concurrent.duration.Duration
 import scala.util.Random
 
 abstract class Base extends Simulation {
-  val NUM_AT_ONCE_USERS = 1000
-  val NUM_STEADY_STATE_USERS = 100
 
-  val RAMP_UP_DURATION = Duration.create(30, TimeUnit.SECONDS)
-  val STEADY_STATE_DURATION = Duration.create(60, TimeUnit.SECONDS)
+  val NUM_AT_ONCE_USERS: Int = if (System.getProperty("steadyStateUser") != null)  Integer.getInteger("steadyStateUser") else 1000
+  val NUM_STEADY_STATE_USERS: Int = if (System.getProperty("steadyStateUser") != null)  Integer.getInteger("steadyStateUser") else 100
+
+  val rampUpDuration: Int = if (System.getProperty("rampUpDuration") != null)  Integer.getInteger("rampUpDuration") else 30
+  val steadyStateDuration: Int = if (System.getProperty("steadyStateDuration") != null)  Integer.getInteger("steadyStateDuration") else 60
+
+  val RAMP_UP_DURATION  = Duration.create(rampUpDuration, TimeUnit.SECONDS)
+  val STEADY_STATE_DURATION = Duration.create(steadyStateDuration, TimeUnit.SECONDS)
 
   val GET_REPEAT_TIMES = 10
 
-  val injectionLoadType = LoadType.atOnce
+  val injectionLoadType = LoadType.withName(if (System.getProperty("loadType") != null)  System.getProperty("loadType") else "atOnce" )
 
   def name() = Random.alphanumeric.take(8).mkString
-
 
   object LoadType extends Enumeration {
     type LoadType = Value
     val atOnce, steadyLoad  = Value
   }
 
-  def getLoad(): ListSet[OpenInjectionStep] ={
-    if (injectionLoadType == LoadType.atOnce) {
-      atOnceLoad()
-    } else {
-      steadyLoad()
-    }
+  def getLoad(): ListSet[OpenInjectionStep] = injectionLoadType match {
+    case LoadType.atOnce => atOnceLoad()
+    case LoadType.steadyLoad => steadyLoad()
+    case _ => throw new RuntimeException("Unknown Load type defined")
   }
 
   def steadyLoad(): ListSet[OpenInjectionStep] = ListSet(
@@ -50,7 +51,7 @@ abstract class Base extends Simulation {
   )
 
   val scn = scenario("Bars")
-    .repeat(10)(exec(http("get").get("/bars").asJson))
+    .repeat(GET_REPEAT_TIMES)(exec(http("get").get("/bars").asJson))
     .exec(http("add").post("/bars").body(StringBody(s"""{"name": "${name()}"}""")).asJson)
 
   val network = Network.newNetwork()

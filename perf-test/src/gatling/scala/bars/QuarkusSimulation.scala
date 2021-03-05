@@ -30,7 +30,6 @@ class QuarkusSimulation extends Base {
   )
 
   after {
-//    println(quarkusContainer.getLogs())
     quarkusContainer.stop()
   }
 
